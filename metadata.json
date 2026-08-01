@@ -1,0 +1,6 @@
+{
+  "name": "macOS & Logic Pro - Master Cheat Sheet",
+  "description": "Single-page A4 print-ready macOS & Logic Pro shortcut cheat sheet with interactive preview, search, and export options.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
