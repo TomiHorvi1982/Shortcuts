@@ -10,7 +10,13 @@ import {
   Plus,
   Sparkles,
   Eye,
-  X
+  Star,
+  X,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { SHORTCUT_CATEGORIES } from '../data/shortcuts';
 
@@ -24,12 +30,17 @@ interface ToolbarProps {
   onPrint: () => void;
   onOpenCodeModal: () => void;
   onOpenBuilderModal: () => void;
+  onOpenCatalogModal: () => void;
   isKeyTesterActive: boolean;
   setIsKeyTesterActive: React.Dispatch<React.SetStateAction<boolean>>;
   isVirtualKeyboardOpen: boolean;
   setIsVirtualKeyboardOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isPrintPreview: boolean;
   setIsPrintPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  viewMode: 'web' | 'tablet' | 'phone';
+  setViewMode: (mode: 'web' | 'tablet' | 'phone') => void;
+  theme: 'night' | 'day';
+  setTheme: (theme: 'night' | 'day') => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -42,51 +53,60 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onPrint,
   onOpenCodeModal,
   onOpenBuilderModal,
+  onOpenCatalogModal,
   isKeyTesterActive,
   setIsKeyTesterActive,
   isVirtualKeyboardOpen,
   setIsVirtualKeyboardOpen,
   isPrintPreview,
-  setIsPrintPreview
+  setIsPrintPreview,
+  viewMode,
+  setViewMode,
+  theme,
+  setTheme
 }) => {
+  const isDay = theme === 'day';
+
   return (
-    <header className="no-print bg-[#18181F]/90 backdrop-blur-md border-b border-white/10 sticky top-0 z-40 px-4 py-3">
+    <header className={`no-print border-b sticky top-0 z-40 px-4 py-3 backdrop-blur-md transition-colors duration-300 ${
+      isDay ? 'bg-white/90 border-slate-200 text-slate-900 shadow-sm' : 'bg-[#18181F]/90 border-white/10 text-white'
+    }`}>
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-        {/* Title / Branding */}
+        {/* Title Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-500 p-0.5 shadow-lg shadow-blue-500/10">
-            <div className="w-full h-full bg-[#16161A] rounded-[10px] flex items-center justify-center text-white font-bold text-lg">
-              
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-500 p-0.5">
+              <div className={`w-full h-full rounded-[6px] flex items-center justify-center font-bold text-sm ${
+                isDay ? 'bg-slate-900 text-white' : 'bg-[#16161A] text-white'
+              }`}>
+                
+              </div>
             </div>
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-white leading-tight flex items-center gap-2">
-              macOS & Logic Pro
-              <span className="text-[10px] font-mono uppercase bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">
-                A4 Cheat Sheet
-              </span>
+            <h1 className={`text-sm font-extrabold tracking-tight ${isDay ? 'text-slate-900' : 'text-white'}`}>
+              macOS & Studio Apps
             </h1>
-            <p className="text-xs text-gray-400 hidden sm:block">
-              Rychlý přehled klávesových zkratek pro efektivnější práci
-            </p>
           </div>
         </div>
 
         {/* Search & Category Filter */}
         <div className="flex items-center gap-2 w-full md:w-auto flex-1 max-w-md">
           <div className="relative w-full">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDay ? 'text-slate-400' : 'text-gray-400'}`} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Hledat zkratku (např. Spotlight, R, ⌘+T)..."
-              className="w-full bg-[#25252D] text-sm text-white pl-9 pr-8 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-500"
+              className={`w-full text-sm pl-9 pr-8 py-1.5 rounded-lg border focus:outline-none transition-colors ${
+                isDay
+                  ? 'bg-slate-100 text-slate-900 border-slate-300 placeholder-slate-400 focus:border-blue-600'
+                  : 'bg-[#25252D] text-white border-white/10 placeholder-gray-500 focus:border-blue-500'
+              }`}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${isDay ? 'text-slate-500 hover:text-slate-900' : 'text-gray-400 hover:text-white'}`}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -94,68 +114,108 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* View Mode & Day/Night Theme & Action Buttons */}
+        <div className="flex items-center flex-wrap gap-2 shrink-0">
+          {/* Day / Night Theme Toggle */}
+          <div className={`flex items-center p-0.5 rounded-lg border text-xs font-semibold ${
+            isDay ? 'bg-slate-100 border-slate-300' : 'bg-[#25252D] border-white/10'
+          }`}>
+            <button
+              onClick={() => setTheme('day')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                isDay ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+              title="Denní režim (Světlé téma)"
+            >
+              <Sun className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Den</span>
+            </button>
+            <button
+              onClick={() => setTheme('night')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                !isDay ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Noční režim (Tmavé téma)"
+            >
+              <Moon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Noc</span>
+            </button>
+          </div>
+
+          {/* View Mode Switcher (Web / Tablet / Phone) */}
+          <div className={`flex items-center p-0.5 rounded-lg border text-xs font-semibold ${
+            isDay ? 'bg-slate-100 border-slate-300' : 'bg-[#25252D] border-white/10'
+          }`}>
+            <button
+              onClick={() => setViewMode('web')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                viewMode === 'web'
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : isDay ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white'
+              }`}
+              title="Web (Počítačové zobrazení)"
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Web</span>
+            </button>
+            <button
+              onClick={() => setViewMode('tablet')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                viewMode === 'tablet'
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : isDay ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white'
+              }`}
+              title="Tablet zobrazení"
+            >
+              <Tablet className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Tablet</span>
+            </button>
+            <button
+              onClick={() => setViewMode('phone')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                viewMode === 'phone'
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : isDay ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white'
+              }`}
+              title="Mobilní zobrazení (Telefon)"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Mobil</span>
+            </button>
+          </div>
+
+          {/* Catalog & Favorites Modal Button */}
+          <button
+            onClick={onOpenCatalogModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-500/30 to-purple-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400 transition-all shadow-md"
+            title="Otevřít kompletní knihovnu zkratek a správce hvězdiček ⭐"
+          >
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span className="hidden lg:inline">Knihovna</span>
+          </button>
+
           {/* Virtual Keyboard Toggle Button */}
           <button
             onClick={() => setIsVirtualKeyboardOpen(!isVirtualKeyboardOpen)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
               isVirtualKeyboardOpen
                 ? 'bg-gradient-to-r from-amber-500/30 to-blue-500/30 text-amber-300 border-amber-500/50 shadow-lg shadow-amber-500/10'
-                : 'bg-[#25252D] text-gray-300 border-white/10 hover:bg-white/10'
+                : isDay ? 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200' : 'bg-[#25252D] text-gray-300 border-white/10 hover:bg-white/10'
             }`}
             title="Zobrazit/skrýt interaktivní virtuální macOS klávesnici"
           >
             <Keyboard className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline font-medium">Virtuální Klávesnice</span>
+            <span className="hidden sm:inline font-medium">Klávesnice</span>
           </button>
 
           {/* Add Shortcut Builder Button */}
           <button
             onClick={onOpenBuilderModal}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all shadow-sm"
-            title="Vytvořit vlastní klávesovou zkratku pomocí klávesnice"
+            title="Vytvořit vlastní klávesovou zkratku"
           >
             <Plus className="w-4 h-4 text-amber-400" />
-            <span>Nová zkratka</span>
-          </button>
-
-          {/* Key tester toggle */}
-          <button
-            onClick={() => setIsKeyTesterActive(!isKeyTesterActive)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-              isKeyTesterActive
-                ? 'bg-blue-500/20 text-blue-300 border-blue-500/40 shadow-lg shadow-blue-500/10'
-                : 'bg-[#25252D] text-gray-300 border-white/10 hover:bg-white/10'
-            }`}
-            title="Aktivuje simulátor živých stisků klávesnice"
-          >
-            <Keyboard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-medium">Klávesový Test</span>
-          </button>
-
-          {/* HTML Code View */}
-          <button
-            onClick={onOpenCodeModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#25252D] text-gray-200 border border-white/10 hover:bg-white/10 transition-colors"
-            title="Zobrazit a zkopírovat čistý HTML/CSS kód"
-          >
-            <Code className="w-3.5 h-3.5 text-blue-400" />
-            <span>HTML Kód</span>
-          </button>
-
-          {/* Print Preview Toggle */}
-          <button
-            onClick={() => setIsPrintPreview(!isPrintPreview)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-              isPrintPreview
-                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-lg shadow-purple-500/10'
-                : 'bg-[#25252D] text-gray-300 border-white/10 hover:bg-white/10'
-            }`}
-            title="Simulovat presný vzhled A4 tisku bez ovladačů aplikace"
-          >
-            <Eye className="w-3.5 h-3.5 text-purple-400" />
-            <span className="hidden sm:inline font-medium">Náhled Tisku</span>
+            <span>+ Zkratka</span>
           </button>
 
           {/* Print / PDF Button */}
@@ -170,75 +230,51 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </div>
       </div>
 
-      {/* Sub-toolbar with Category pills & Zoom controls */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 mt-2.5 pt-2 border-t border-white/5 text-xs">
-        {/* Category Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <button
-            onClick={() => setSelectedCategoryId(null)}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-              selectedCategoryId === null
-                ? 'bg-blue-600 text-white'
-                : 'bg-[#25252D] text-gray-400 hover:text-white'
-            }`}
-          >
-            Všechny kategórie
-          </button>
-          {SHORTCUT_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategoryId === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategoryId(isSelected ? null : cat.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap border ${
-                  isSelected
-                    ? 'text-white shadow-sm'
-                    : 'bg-[#25252D] text-gray-400 border-transparent hover:text-white'
-                }`}
-                style={{
-                  backgroundColor: isSelected ? cat.accentColor : undefined,
-                  borderColor: isSelected ? cat.accentColor : undefined
-                }}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: cat.accentColor }}
-                />
-                {cat.title}
-              </button>
-            );
-          })}
+      {/* Sub-toolbar with Zoom controls */}
+      <div className={`max-w-7xl mx-auto flex items-center justify-between gap-4 mt-2 pt-2 border-t text-xs ${
+        isDay ? 'border-slate-200 text-slate-600' : 'border-white/5 text-gray-400'
+      }`}>
+        <div className="flex items-center gap-2 font-medium">
+          <span className="text-[11px] opacity-80">Režim zobrazení:</span>
+          <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-bold uppercase text-[9.5pt]">
+            {viewMode === 'web' ? '💻 Web (Desktop)' : viewMode === 'tablet' ? '📱 Tablet Preview' : '📱 Mobil Preview'}
+          </span>
+          <span className="hidden sm:inline text-[11px] opacity-60">• Téma: {isDay ? '☀️ Den (Světlé)' : '🌙 Noc (Tmavé)'}</span>
         </div>
 
         {/* Zoom Controls */}
-        <div className="flex items-center gap-1 bg-[#25252D] px-2 py-1 rounded-lg border border-white/10 shrink-0">
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border shrink-0 ${
+          isDay ? 'bg-slate-100 border-slate-300' : 'bg-[#25252D] border-white/10'
+        }`}>
+          <span className="text-[11px] font-medium mr-1 opacity-80">Zoom A4:</span>
           <button
-            onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
-            className="p-1 hover:bg-white/10 rounded text-gray-300 hover:text-white"
-            title="Oddálit"
+            onClick={() => setScale((s) => Math.max(0.5, Math.round((s - 0.1) * 10) / 10))}
+            className={`p-1 rounded transition-colors ${isDay ? 'hover:bg-slate-200 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
+            title="Oddálit dokument A4"
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
-          <span className="text-[11px] font-mono text-gray-300 w-10 text-center">
+          <span className="text-[11px] font-mono text-blue-500 w-10 text-center font-bold">
             {Math.round(scale * 100)}%
           </span>
           <button
-            onClick={() => setScale((s) => Math.min(1.5, s + 0.1))}
-            className="p-1 hover:bg-white/10 rounded text-gray-300 hover:text-white"
-            title="Přiblížit"
+            onClick={() => setScale((s) => Math.min(1.5, Math.round((s + 0.1) * 10) / 10))}
+            className={`p-1 rounded transition-colors ${isDay ? 'hover:bg-slate-200 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
+            title="Přiblížit dokument A4"
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
-          <div className="w-px h-3 bg-white/20 mx-0.5" />
+          <div className={`w-px h-3.5 mx-0.5 ${isDay ? 'bg-slate-300' : 'bg-white/20'}`} />
           <button
             onClick={() => setScale(1.0)}
-            className="p-1 hover:bg-white/10 rounded text-gray-300 hover:text-white"
+            className={`p-1 rounded transition-colors ${isDay ? 'hover:bg-slate-200 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
             title="Obnovit výchozí velikost (100%)"
           >
-            <Maximize2 className="w-3.5 h-3.5" />
+            <Maximize2 className="w-3.5 h-3.5 opacity-80" />
           </button>
         </div>
       </div>
     </header>
   );
 };
+

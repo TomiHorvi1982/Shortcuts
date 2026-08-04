@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ShortcutCategory } from '../types';
-import { Laptop, Terminal, Music, FileText, LayoutGrid, Check, Copy, Trash2, GripVertical, Palette } from 'lucide-react';
+import { Laptop, Terminal, Music, FileText, LayoutGrid, Check, Copy, Trash2, GripVertical, Palette, Star, Sparkles } from 'lucide-react';
 
 interface A4SheetProps {
   categories: ShortcutCategory[];
@@ -10,10 +10,12 @@ interface A4SheetProps {
   onDeleteShortcut?: (shortcutId: string) => void;
   onReorderCategories?: (newCategories: ShortcutCategory[]) => void;
   onUpdateCategoryColor?: (categoryId: string, newColor: string) => void;
+  onToggleFavorite?: (shortcutId: string) => void;
   isPrintPreview?: boolean;
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
+  Sparkles: <Sparkles className="w-3.5 h-3.5" />,
   Laptop: <Laptop className="w-3.5 h-3.5" />,
   Terminal: <Terminal className="w-3.5 h-3.5" />,
   Music: <Music className="w-3.5 h-3.5" />,
@@ -29,6 +31,7 @@ export const A4Sheet: React.FC<A4SheetProps> = ({
   onDeleteShortcut,
   onReorderCategories,
   onUpdateCategoryColor,
+  onToggleFavorite,
   isPrintPreview = false
 }) => {
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
@@ -99,24 +102,19 @@ export const A4Sheet: React.FC<A4SheetProps> = ({
       }}
     >
       {/* Header */}
-      <header className="border-b border-white/10 pb-3 mb-3 flex items-end justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xl leading-none text-white font-semibold"></span>
-            <h1 className="text-[20pt] font-extrabold tracking-tight text-white leading-tight">
-              macOS & Logic Pro <span className="text-gray-500 font-light">— Master Cheat Sheet</span>
-            </h1>
-          </div>
-          <p className="text-[9.5pt] text-[#8E8E93] font-medium mt-0.5">
-            Rychlý přehled klávesových zkratek pro efektivnější práci
-          </p>
+      <header className="border-b border-white/10 pb-2 mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl leading-none text-white font-semibold"></span>
+          <h1 className="text-[16pt] font-extrabold tracking-tight text-white leading-tight">
+            macOS & Studio Apps Reference Sheet
+          </h1>
         </div>
         <div className="flex items-center gap-2 bg-[#25252D] px-3 py-1 rounded-full border border-white/5 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
           <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />
           <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
           <span className="text-[8pt] uppercase tracking-widest ml-1 text-gray-400 font-mono">
-            Bento A4
+            Bento Grid
           </span>
         </div>
       </header>
@@ -251,6 +249,21 @@ export const A4Sheet: React.FC<A4SheetProps> = ({
                         title="Kliknutím zkopírujete zkratku"
                       >
                         <span className="text-[8.2pt] text-white/85 font-medium leading-tight flex-1 group-hover:text-white flex items-center gap-1">
+                          {onToggleFavorite && !isPrintPreview && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleFavorite(item.id);
+                              }}
+                              className={`no-print p-0.5 rounded hover:bg-white/10 transition-colors ${
+                                item.isFavorite ? 'text-amber-400' : 'text-gray-600 opacity-0 group-hover:opacity-100'
+                              }`}
+                              title={item.isFavorite ? 'Odebrat z Oblíbených' : 'Přidat mezi ⭐ Nejpoužívanější'}
+                            >
+                              <Star className={`w-2.5 h-2.5 ${item.isFavorite ? 'fill-amber-400' : ''}`} />
+                            </button>
+                          )}
                           {item.label}
                           {isCustom && (
                             <span className="text-[6.5pt] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">

@@ -6,10 +6,12 @@ import { Toolbar } from './components/Toolbar';
 import { CodeModal } from './components/CodeModal';
 import { KeyTesterBar } from './components/KeyTesterBar';
 import { ShortcutBuilderModal } from './components/ShortcutBuilderModal';
+import { ShortcutCatalogModal } from './components/ShortcutCatalogModal';
+import { CategorySidebar } from './components/CategorySidebar';
 import { VirtualKeyboard } from './components/VirtualKeyboard';
 import { RotateCcw, Eye, Printer, X, FileCheck, ArrowLeft } from 'lucide-react';
 
-const STORAGE_KEY = 'mac_cheatsheet_categories_v2';
+const STORAGE_KEY = 'mac_cheatsheet_categories_v3';
 
 export default function App() {
   const [categories, setCategories] = useState<ShortcutCategory[]>(() => {
@@ -29,7 +31,34 @@ export default function App() {
   const [scale, setScale] = useState(1.0);
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
   const [isBuilderModalOpen, setIsBuilderModalOpen] = useState(false);
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isKeyTesterActive, setIsKeyTesterActive] = useState(false);
+  const [viewMode, setViewMode] = useState<'web' | 'tablet' | 'phone'>('web');
+  const [theme, setTheme] = useState<'night' | 'day'>('night');
+
+  const handleAddNewCategory = (
+    title: string,
+    accentColor: string = '#0A84FF',
+    initialShortcuts: ShortcutItem[] = []
+  ) => {
+    const newCatId = `cat_custom_${Date.now()}`;
+    const newCategory: ShortcutCategory = {
+      id: newCatId,
+      title,
+      accentColor,
+      badgeBg: `${accentColor}20`,
+      borderColor: `${accentColor}40`,
+      iconName: 'FileText',
+      shortcuts: initialShortcuts
+    };
+    setCategories((prev) => [...prev, newCategory]);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    if (categoryId === 'favorites') return;
+    setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
+  };
   const [isVirtualKeyboardOpen, setIsVirtualKeyboardOpen] = useState(true);
   const [isPrintPreview, setIsPrintPreview] = useState(false);
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
@@ -66,6 +95,44 @@ export default function App() {
         return cat;
       })
     );
+  };
+
+  const handleToggleFavorite = (shortcutId: string) => {
+    setCategories((prevCategories) => {
+      // Toggle isFavorite flag in all standard categories
+      const updated = prevCategories.map((cat) => {
+        if (cat.id === 'favorites') return cat;
+        return {
+          ...cat,
+          shortcuts: cat.shortcuts.map((s) => {
+            if (s.id === shortcutId) {
+              return { ...s, isFavorite: !s.isFavorite };
+            }
+            return s;
+          })
+        };
+      });
+
+      // Re-collect all favorite shortcuts across categories
+      const favList: ShortcutItem[] = [];
+      updated.forEach((cat) => {
+        if (cat.id !== 'favorites') {
+          cat.shortcuts.forEach((s) => {
+            if (s.isFavorite) {
+              favList.push({ ...s, categoryName: cat.title });
+            }
+          });
+        }
+      });
+
+      // Update favorites category
+      return updated.map((cat) => {
+        if (cat.id === 'favorites') {
+          return { ...cat, shortcuts: favList };
+        }
+        return cat;
+      });
+    });
   };
 
   const handleDeleteShortcut = (shortcutId: string) => {
@@ -113,8 +180,12 @@ export default function App() {
     window.print();
   };
 
+  const isDay = theme === 'day';
+
   return (
-    <div className="min-h-screen bg-[#0F0F12] text-[#F2F2F7] flex flex-col font-sans selection:bg-blue-500/30 selection:text-white">
+    <div className={`min-h-screen flex flex-col font-sans selection:bg-blue-500/30 transition-colors duration-300 ${
+      isDay ? 'bg-slate-100 text-slate-900 selection:text-slate-900' : 'bg-[#0F0F12] text-[#F2F2F7] selection:text-white'
+    }`}>
       {/* Conditionally Render Toolbar or Print Preview Bar */}
       {isPrintPreview ? (
         <header className="no-print bg-[#18181F]/95 backdrop-blur-md border-b border-purple-500/40 sticky top-0 z-50 px-4 py-2.5 shadow-2xl animate-fade-in">
@@ -169,12 +240,17 @@ export default function App() {
             onPrint={handlePrint}
             onOpenCodeModal={() => setIsCodeModalOpen(true)}
             onOpenBuilderModal={() => setIsBuilderModalOpen(true)}
+            onOpenCatalogModal={() => setIsCatalogModalOpen(true)}
             isKeyTesterActive={isKeyTesterActive}
             setIsKeyTesterActive={setIsKeyTesterActive}
             isVirtualKeyboardOpen={isVirtualKeyboardOpen}
             setIsVirtualKeyboardOpen={setIsVirtualKeyboardOpen}
             isPrintPreview={isPrintPreview}
             setIsPrintPreview={setIsPrintPreview}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            theme={theme}
+            setTheme={setTheme}
           />
 
           {/* Interactive Virtual Keyboard */}
@@ -185,6 +261,7 @@ export default function App() {
               onClose={() => setIsVirtualKeyboardOpen(false)}
               onKeyComboChange={(keys) => setActiveKeys(keys)}
               onUpdateCategoryColor={handleUpdateCategoryColor}
+              theme={theme}
             />
           )}
 
@@ -201,43 +278,95 @@ export default function App() {
 
       {/* Main Canvas Viewport */}
       <main className={`flex-1 overflow-auto flex justify-center items-start transition-all duration-300 ${
-        isPrintPreview ? 'py-12 bg-[#0A0A0E] bg-grid-pattern' : 'py-8 px-4'
+        isPrintPreview
+          ? 'py-12 bg-[#0A0A0E] bg-grid-pattern'
+          : isDay ? 'py-8 px-4 bg-slate-100' : 'py-8 px-4 bg-[#0F0F12]'
       }`}>
-        <div className="flex flex-col items-center max-w-full">
-          {/* Helper hint banner - hidden in print preview */}
-          {!isPrintPreview && (
-            <div className="no-print mb-4 flex items-center justify-between gap-4 w-full max-w-[210mm] px-2 text-xs text-gray-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                A4 Portrait • Přetažením myší (drag & drop) změníte pořadí kategorií
-              </span>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleResetToDefault}
-                  className="hover:text-amber-400 transition-colors flex items-center gap-1 text-[11px]"
-                  title="Obnovit výchozí zkratky"
-                >
-                  <RotateCcw className="w-3 h-3" /> Obnovit výchozí
-                </button>
-                <span>Uložení do PDF přes tisk (⌘+P)</span>
+        {/* Responsive Device Frame Container based on ViewMode */}
+        <div className={`w-full transition-all duration-300 ${
+          viewMode === 'tablet'
+            ? `max-w-[840px] mx-auto p-4 md:p-6 rounded-[36px] border-8 shadow-2xl my-4 relative ${
+                isDay ? 'bg-slate-200 border-slate-400 shadow-slate-400/20' : 'bg-[#141419] border-slate-800 shadow-black/80'
+              }`
+            : viewMode === 'phone'
+            ? `max-w-[420px] mx-auto p-3 md:p-4 rounded-[48px] border-[10px] shadow-2xl my-4 relative ${
+                isDay ? 'bg-slate-200 border-slate-400 shadow-slate-400/20' : 'bg-[#141419] border-slate-900 shadow-black/90'
+              }`
+            : 'max-w-full'
+        }`}>
+          {/* Simulated Tablet / Mobile Bezel Elements */}
+          {viewMode === 'tablet' && (
+            <div className="w-full flex items-center justify-center mb-3 no-print">
+              <div className="w-3.5 h-3.5 rounded-full bg-slate-900 border border-white/20 shadow-inner" title="Tablet Front Camera" />
+            </div>
+          )}
+          {viewMode === 'phone' && (
+            <div className="w-full flex items-center justify-center mb-4 no-print">
+              <div className="w-28 h-5 rounded-full bg-black border border-white/10 flex items-center justify-between px-3 shadow-inner" title="Dynamic Island">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-900/60 border border-blue-400/30" />
+                <span className="w-2 h-2 rounded-full bg-green-500/80 animate-pulse" />
               </div>
             </div>
           )}
 
-          {/* Core A4 Sheet Component */}
-          <div className={`transition-all duration-300 ${
-            isPrintPreview ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/20 rounded-lg ring-1 ring-white/10' : ''
-          }`}>
-            <A4Sheet
-              categories={filteredCategories}
-              searchQuery={searchQuery}
-              activePressedKeys={activeKeys}
-              scale={scale}
-              onDeleteShortcut={handleDeleteShortcut}
-              onReorderCategories={handleReorderCategories}
-              onUpdateCategoryColor={handleUpdateCategoryColor}
-              isPrintPreview={isPrintPreview}
-            />
+          <div className="flex flex-col xl:flex-row items-center xl:items-start justify-center gap-6 max-w-full">
+            {/* Apps Kategorie Panel - listed directly beside the A4 portrait sheet */}
+            {!isPrintPreview && (
+              <CategorySidebar
+                isOpen={true}
+                onClose={() => {}}
+                categories={categories}
+                onUpdateCategoryColor={handleUpdateCategoryColor}
+                onToggleFavorite={handleToggleFavorite}
+                onAddShortcut={handleAddShortcut}
+                onRemoveShortcut={handleDeleteShortcut}
+                onAddNewCategory={handleAddNewCategory}
+                onDeleteCategory={handleDeleteCategory}
+                theme={theme}
+              />
+            )}
+
+            {/* Core A4 Sheet Container */}
+            <div className="flex flex-col items-center max-w-full overflow-x-auto w-full">
+              {/* Helper hint banner - hidden in print preview */}
+              {!isPrintPreview && (
+                <div className={`no-print mb-4 flex items-center justify-between gap-4 w-full max-w-[210mm] px-2 text-xs ${
+                  isDay ? 'text-slate-600' : 'text-gray-400'
+                }`}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                    A4 Portrait • Drag & Drop řazení
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleResetToDefault}
+                      className="hover:text-amber-500 transition-colors flex items-center gap-1 text-[11px] font-medium"
+                      title="Obnovit výchozí zkratky"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Obnovit
+                    </button>
+                    <span>PDF Tisk (⌘+P)</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Core A4 Sheet Component */}
+              <div className={`transition-all duration-300 max-w-full ${
+                isPrintPreview ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/20 rounded-lg ring-1 ring-white/10' : ''
+              }`}>
+                <A4Sheet
+                  categories={filteredCategories}
+                  searchQuery={searchQuery}
+                  activePressedKeys={activeKeys}
+                  scale={scale}
+                  onDeleteShortcut={handleDeleteShortcut}
+                  onReorderCategories={handleReorderCategories}
+                  onUpdateCategoryColor={handleUpdateCategoryColor}
+                  onToggleFavorite={handleToggleFavorite}
+                  isPrintPreview={isPrintPreview}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -255,6 +384,16 @@ export default function App() {
         onClose={() => setIsBuilderModalOpen(false)}
         categories={categories}
         onAddShortcut={handleAddShortcut}
+      />
+
+      {/* Comprehensive Catalog & Favorites Star Manager Modal */}
+      <ShortcutCatalogModal
+        isOpen={isCatalogModalOpen}
+        onClose={() => setIsCatalogModalOpen(false)}
+        categories={categories}
+        onToggleFavorite={handleToggleFavorite}
+        onAddShortcut={handleAddShortcut}
+        onRemoveShortcut={handleDeleteShortcut}
       />
     </div>
   );

@@ -1,6 +1,74 @@
 import React, { useEffect, useState } from 'react';
-import { Keyboard, X, Sparkles, Check, Info, Search, Palette, Paintbrush } from 'lucide-react';
+import { Keyboard, X, Sparkles, Check, Info, Search, Palette, Paintbrush, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { ShortcutCategory, ShortcutItem } from '../types';
+
+interface DAWKeyInfo {
+  action: string;
+  icon?: string;
+  bgColor: string;
+  textColor?: string;
+  category: 'tools' | 'tracks' | 'transport' | 'windows';
+  badge?: string;
+}
+
+const LOGIC_DAW_KEYMAP: Record<string, DAWKeyInfo> = {
+  'ESC': { action: 'ZRUŠIT / NÁSTROJ', icon: '🚫', bgColor: '#8E8E93', category: 'tools' },
+  'F1': { action: 'NÁPOVĚDA', icon: '❓', bgColor: '#0A84FF', category: 'windows' },
+  'F2': { action: 'MARKERY', icon: '🔖', bgColor: '#FF9500', category: 'windows' },
+
+  '1': { action: 'HLAVNÍ OKNO', icon: '🖥️', bgColor: '#FF9500', category: 'windows' },
+  '2': { action: 'SADA 2', icon: '📐', bgColor: '#FF9500', category: 'windows' },
+  '3': { action: 'SADA 3', icon: '📐', bgColor: '#FF9500', category: 'windows' },
+  '4': { action: 'PIANO ROLL', icon: '🎹', bgColor: '#FF9500', category: 'windows' },
+  '5': { action: 'NOTACE', icon: '🎼', bgColor: '#FF9500', category: 'windows' },
+  '6': { action: 'AUDIO EDITOR', icon: '🎙️', bgColor: '#FF9500', category: 'windows' },
+  '7': { action: 'EVENT LIST', icon: '📋', bgColor: '#FF9500', category: 'windows' },
+  '8': { action: 'PROJ AUDIO', icon: '🎵', bgColor: '#FF9500', category: 'windows' },
+  '9': { action: 'TRANSFORM', icon: '🔄', bgColor: '#FF9500', category: 'windows' },
+  '0': { action: 'ENVIRONMENT', icon: '⚙️', bgColor: '#BF5AF2', category: 'windows' },
+  '-': { action: 'ODDÁLIT (ZOOM-)', icon: '🔍-', bgColor: '#0A84FF', category: 'tools' },
+  '=': { action: 'PŘIBLÍŽIT (ZOOM+)', icon: '🔍+', bgColor: '#0A84FF', category: 'tools' },
+
+  'Q': { action: 'QUANTIZE', icon: '⏱️', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'QUANT' },
+  'W': { action: 'AUDIO FILE', icon: '🎙️', bgColor: '#FF9500', category: 'windows' },
+  'E': { action: 'EDITORY', icon: '✏️', bgColor: '#FF9500', category: 'windows' },
+  'R': { action: 'RECORD ENABLE', icon: '🔴', bgColor: '#FF3B30', textColor: '#fff', category: 'tracks', badge: 'REC' },
+  'T': { action: 'PALETA NÁSTROJŮ', icon: '🧰', bgColor: '#0A84FF', category: 'tools', badge: 'TOOL' },
+  'Y': { action: 'KNAPHOVNA (LIB)', icon: '📚', bgColor: '#FF9500', category: 'windows' },
+  'U': { action: 'LOKÁTORY', icon: '🔁', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+  'I': { action: 'INSPEKTOR', icon: 'ℹ️', bgColor: '#FF9500', category: 'tracks', badge: 'INSP' },
+  'O': { action: 'SMYČKY (LOOPS)', icon: '➰', bgColor: '#FF9500', category: 'windows' },
+  'P': { action: 'PIANO ROLL', icon: '🎹', bgColor: '#FFD60A', textColor: '#000', category: 'windows' },
+  '[': { action: 'POSUN TIK VLEVO', icon: '⏪', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+  ']': { action: 'POSUN TIK VPRAVO', icon: '⏩', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+
+  'A': { action: 'AUTOMACE', icon: '🎚️', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'AUTO' },
+  'S': { action: 'SOLO STOPY', icon: '🟡', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'SOLO' },
+  'D': { action: 'LIST EDIT', icon: '📋', bgColor: '#FFD60A', textColor: '#000', category: 'windows' },
+  'F': { action: 'FLEX / MEDIA', icon: '📁', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'FLEX' },
+  'G': { action: 'GLOBÁLNÍ STOPY', icon: '🌐', bgColor: '#30D158', textColor: '#000', category: 'tracks' },
+  'H': { action: 'SKRÝT STOPU', icon: '👁️', bgColor: '#30D158', textColor: '#000', category: 'tracks', badge: 'HIDE' },
+  'J': { action: 'SPOJIT REGIONY', icon: '🔗', bgColor: '#0A84FF', category: 'tools' },
+  'K': { action: 'METRONOM', icon: '⏱️', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+  'L': { action: 'SMYČKA REGIONU', icon: '🔁', bgColor: '#0A84FF', category: 'tools' },
+  ';': { action: 'POSUN NA SPL', icon: '📍', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+  "'": { action: 'SLEDOVAT HRANÍ', icon: '🎯', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+
+  'Z': { action: 'ZOOM VÝBĚRU', icon: '🔍', bgColor: '#0A84FF', category: 'tools', badge: 'ZOOM' },
+  'X': { action: 'MIXÁŽNÍ PULT', icon: '🎛️', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'MIX' },
+  'C': { action: 'CYKLUS (CYCLE)', icon: '🔄', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+  'V': { action: 'SKRÝT PLUG-INY', icon: '🔌', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'PLUG' },
+  'B': { action: 'CHYTRÉ OVLADAČE', icon: '💡', bgColor: '#FFD60A', textColor: '#000', category: 'tracks', badge: 'SMART' },
+  'N': { action: 'NOTACE (SCORE)', icon: '🎼', bgColor: '#FFD60A', textColor: '#000', category: 'windows' },
+  'M': { action: 'MUTE STOPY', icon: '🔇', bgColor: '#BF5AF2', category: 'tracks', badge: 'MUTE' },
+  ',': { action: 'POSUN VLEVO', icon: '◀️', bgColor: '#0A84FF', category: 'tools' },
+  '.': { action: 'POSUN VPRAVO', icon: '▶️', bgColor: '#0A84FF', category: 'tools' },
+  '/': { action: 'SKOK NA POZICI', icon: '🎯', bgColor: '#30D158', textColor: '#000', category: 'transport' },
+
+  'TAB': { action: 'PREPÍNAČ OKEN', icon: '⇥', bgColor: '#8E8E93', category: 'tools' },
+  'CAPS': { action: 'KLÁVESNICE MIDI', icon: '🎹', bgColor: '#BF5AF2', category: 'tools' },
+  'Spacebar': { action: 'PREHRÁT / ZASTAVIT', icon: '⏯️', bgColor: '#30D158', textColor: '#000', category: 'transport', badge: 'PLAY' }
+};
 
 interface VirtualKeyboardProps {
   categories: ShortcutCategory[];
@@ -8,6 +76,8 @@ interface VirtualKeyboardProps {
   onClose?: () => void;
   onKeyComboChange?: (keys: string[]) => void;
   onUpdateCategoryColor?: (categoryId: string, newColor: string) => void;
+  isSidebarOpen?: boolean;
+  theme?: 'night' | 'day';
 }
 
 const PRESET_COLORS = [
@@ -37,13 +107,20 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   searchQuery = '',
   onClose,
   onKeyComboChange,
-  onUpdateCategoryColor
+  onUpdateCategoryColor,
+  isSidebarOpen = false,
+  theme = 'night'
 }) => {
+  const isDay = theme === 'day';
   const [pressedKeyCodes, setPressedKeyCodes] = useState<Set<string>>(new Set());
   const [activeSymbols, setActiveSymbols] = useState<string[]>([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
   const [isColorCodedKeys, setIsColorCodedKeys] = useState(true);
+  const [isDawMode, setIsDawMode] = useState(true);
+  const [dawCategoryFilter, setDawCategoryFilter] = useState<'all' | 'tools' | 'tracks' | 'transport' | 'windows'>('all');
   const [activePresetPickerId, setActivePresetPickerId] = useState<string | null>(null);
+  const [kbdScale, setKbdScale] = useState(1.0);
+
 
   const [matchingShortcut, setMatchingShortcut] = useState<{
     shortcut: ShortcutItem;
@@ -370,6 +447,19 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
     const keyCats = getKeyCategories(key);
     const primaryCat = keyCats[0];
 
+    const labelUpper = key.label.toUpperCase();
+    const idUpper = key.id.toUpperCase();
+    const codeMatchUpper = key.keyCodeMatches?.[0]?.replace('Key', '')?.toUpperCase() || '';
+
+    const dawInfo = isDawMode
+      ? (LOGIC_DAW_KEYMAP[labelUpper] ||
+         LOGIC_DAW_KEYMAP[idUpper] ||
+         LOGIC_DAW_KEYMAP[codeMatchUpper] ||
+         ((key.id === 'space' || key.id === 'spacebar' || key.label.toLowerCase().includes('mezerník') || key.label.toLowerCase().includes('space')) ? LOGIC_DAW_KEYMAP['Spacebar'] : undefined))
+      : undefined;
+
+    const isDawCategoryMatched = dawCategoryFilter === 'all' || (dawInfo && dawInfo.category === dawCategoryFilter);
+
     const isFilterMatched = selectedCategoryFilter
       ? keyCats.some((c) => c.id === selectedCategoryFilter)
       : false;
@@ -396,6 +486,23 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
       } else {
         keyClasses = 'bg-[#1C1C24] text-gray-600 border-white/5 opacity-30';
       }
+    } else if (isDawMode && dawInfo) {
+      if (isDawCategoryMatched) {
+        inlineStyle = {
+          backgroundColor: dawInfo.bgColor,
+          borderColor: 'rgba(255, 255, 255, 0.5)',
+          color: dawInfo.textColor || '#FFFFFF',
+          boxShadow: `0 0 10px ${dawInfo.bgColor}88`
+        };
+        keyClasses = 'font-bold z-10 hover:scale-[1.05] transition-transform ring-1 ring-white/20';
+      } else {
+        inlineStyle = {
+          backgroundColor: '#1E1E26',
+          borderColor: 'rgba(255, 255, 255, 0.05)',
+          color: '#6B7280'
+        };
+        keyClasses = 'opacity-30 scale-[0.97] transition-all';
+      }
     } else if (isColorCodedKeys && primaryCat) {
       inlineStyle = {
         borderColor: `${primaryCat.accentColor}88`,
@@ -409,30 +516,56 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
         type="button"
         onClick={() => toggleVirtualKey(key.symbols || [key.label], key.keyCodeMatches?.[0] || key.id)}
         style={inlineStyle}
-        className={`relative h-9 rounded-md border text-center font-medium transition-all duration-150 select-none flex flex-col items-center justify-center p-0.5 cursor-pointer ${
+        className={`relative h-10 rounded-md border text-center font-medium transition-all duration-150 select-none flex flex-col items-center justify-between p-0.5 cursor-pointer overflow-hidden ${
           key.width ? key.width : 'flex-1 min-w-[32px]'
         } ${keyClasses}`}
+        title={dawInfo ? `Logic Pro: ${key.label} → ${dawInfo.action}` : key.label}
       >
-        {key.subLabel && (
-          <span className={`text-[7pt] leading-none ${active ? 'text-black/80' : searchMatched ? 'text-cyan-100' : 'text-gray-400'}`}>
-            {key.subLabel}
-          </span>
-        )}
-        <span className="text-[8.5pt] tracking-tight leading-tight">{key.label}</span>
+        {/* Sublabel, DAW Icon, and Track Control Badge */}
+        <div className="w-full flex items-center justify-between px-0.5 leading-none">
+          {key.subLabel && !dawInfo && (
+            <span className={`text-[6.5pt] ${active ? 'text-black/80' : searchMatched ? 'text-cyan-100' : 'text-gray-400'}`}>
+              {key.subLabel}
+            </span>
+          )}
+          {dawInfo?.icon && (
+            <span className="text-[7.5pt] leading-none shrink-0 drop-shadow">
+              {dawInfo.icon}
+            </span>
+          )}
+          {dawInfo?.badge && isDawCategoryMatched && (
+            <span className="text-[5pt] font-mono font-black px-1 rounded bg-black/40 text-white border border-white/30 leading-tight">
+              {dawInfo.badge}
+            </span>
+          )}
+        </div>
 
-        {/* Color-coded category indicator bar at bottom of keycap */}
-        {isColorCodedKeys && !selectedCategoryFilter && primaryCat && !active && !searchMatched && (
+        {/* Main Key Symbol */}
+        <span className="text-[8.5pt] tracking-tight leading-none font-bold">
+          {key.label}
+        </span>
+
+        {/* DAW Action Name or Category Dot */}
+        {dawInfo ? (
+          <span className="text-[5.5pt] uppercase tracking-tighter leading-none px-0.5 font-mono truncate max-w-full opacity-90 drop-shadow-sm font-black">
+            {dawInfo.action}
+          </span>
+        ) : isColorCodedKeys && !selectedCategoryFilter && primaryCat && !active && !searchMatched ? (
           <span
-            className="absolute bottom-0.5 w-2 h-0.5 rounded-full shadow-sm"
+            className="w-2 h-0.5 rounded-full shadow-sm mb-0.5"
             style={{ backgroundColor: primaryCat.accentColor }}
           />
+        ) : (
+          <span className="h-0.5" />
         )}
       </button>
     );
   };
 
   return (
-    <div className="no-print bg-[#18181F] border-b border-amber-500/30 p-3 shadow-2xl transition-all duration-300 animate-fade-in">
+    <div className={`no-print border-b p-3 shadow-2xl transition-all duration-300 animate-fade-in ${
+      isDay ? 'bg-slate-200 border-slate-300 text-slate-900' : 'bg-[#18181F] border-amber-500/30 text-white'
+    }`}>
       <div className="max-w-5xl mx-auto flex flex-col gap-2.5">
         {/* Top bar: Status & Active Combo Banner */}
         <div className="flex items-center justify-between gap-3">
@@ -441,19 +574,143 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
               <Keyboard className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                Interaktivní macOS Klávesnice
-                <span className="text-[9px] uppercase tracking-wider font-mono px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full">
-                  Real-time Highlighting
-                </span>
-              </h3>
-              <p className="text-[10px] text-gray-400">
-                Stiskněte klávesy na své fyzické klávesnici nebo klikněte přímo na klávesy níže
-              </p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  Interaktivní Klávesnice
+                </h3>
+
+                {/* DAW Layout Mode Switcher */}
+                <div className="flex items-center gap-1 bg-[#282835] p-1 rounded-lg border border-white/10 ml-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDawMode(true)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${
+                      isDawMode
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <span>🎛️ Logic Pro DAW Layout</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDawMode(false)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${
+                      !isDawMode
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <span> macOS Standard</span>
+                  </button>
+                </div>
+
+                {/* Keyboard Zoom Control */}
+                <div className="flex items-center gap-1 bg-[#282835] p-1 rounded-lg border border-white/10 ml-2">
+                  <span className="text-[10px] text-gray-400 font-medium hidden sm:inline px-1">Zoom:</span>
+                  <button
+                    type="button"
+                    onClick={() => setKbdScale((s) => Math.max(0.6, Math.round((s - 0.1) * 10) / 10))}
+                    className="p-1 hover:bg-white/10 rounded text-gray-300 hover:text-white transition-colors"
+                    title="Oddálit klávesnici"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-[10px] font-mono text-amber-300 w-9 text-center font-bold">
+                    {Math.round(kbdScale * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setKbdScale((s) => Math.min(1.4, Math.round((s + 0.1) * 10) / 10))}
+                    className="p-1 hover:bg-white/10 rounded text-gray-300 hover:text-white transition-colors"
+                    title="Přiblížit klávesnici"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setKbdScale(1.0)}
+                    className="p-1 hover:bg-white/10 rounded text-gray-300 hover:text-white transition-colors"
+                    title="Obnovit zoom klávesnice (100%)"
+                  >
+                    <Maximize2 className="w-3 h-3 text-gray-400" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Active Combo & Match Result Display */}
+        {/* Logic Pro DAW Layout Selection Filter Bar */}
+        {isDawMode && (
+          <div className="bg-[#1C1C24] p-2 rounded-xl border border-amber-500/30 flex items-center justify-between flex-wrap gap-2 shadow-inner animate-in fade-in">
+            <div className="flex items-center gap-1.5 text-xs text-amber-300 font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Logic Pro DAW Nástroje & Výběr Ovladačů:</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setDawCategoryFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-[10.5pt] font-bold transition-all flex items-center gap-1 ${
+                  dawCategoryFilter === 'all'
+                    ? 'bg-amber-500 text-black shadow-md ring-1 ring-amber-300'
+                    : 'bg-[#282835] text-gray-300 hover:text-white border border-white/10'
+                }`}
+              >
+                <span>🎛️ Všechny Klavesy</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDawCategoryFilter('tools')}
+                className={`px-2.5 py-1 rounded-lg text-[10.5pt] font-bold transition-all flex items-center gap-1 ${
+                  dawCategoryFilter === 'tools'
+                    ? 'bg-blue-600 text-white shadow-md ring-1 ring-blue-300'
+                    : 'bg-[#282835] text-gray-300 hover:text-white border border-white/10'
+                }`}
+              >
+                <span>🧰 Nástroje & Edice</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDawCategoryFilter('tracks')}
+                className={`px-2.5 py-1 rounded-lg text-[10.5pt] font-bold transition-all flex items-center gap-1 ${
+                  dawCategoryFilter === 'tracks'
+                    ? 'bg-yellow-500 text-black shadow-md ring-1 ring-yellow-300'
+                    : 'bg-[#282835] text-gray-300 hover:text-white border border-white/10'
+                }`}
+              >
+                <span>🎚️ Ovladače Stop & Mixer</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDawCategoryFilter('transport')}
+                className={`px-2.5 py-1 rounded-lg text-[10.5pt] font-bold transition-all flex items-center gap-1 ${
+                  dawCategoryFilter === 'transport'
+                    ? 'bg-emerald-600 text-white shadow-md ring-1 ring-emerald-300'
+                    : 'bg-[#282835] text-gray-300 hover:text-white border border-white/10'
+                }`}
+              >
+                <span>⏯️ Transport & Navigace</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDawCategoryFilter('windows')}
+                className={`px-2.5 py-1 rounded-lg text-[10.5pt] font-bold transition-all flex items-center gap-1 ${
+                  dawCategoryFilter === 'windows'
+                    ? 'bg-orange-500 text-black shadow-md ring-1 ring-orange-300'
+                    : 'bg-[#282835] text-gray-300 hover:text-white border border-white/10'
+                }`}
+              >
+                <span>🖥️ Okna & Editory</span>
+              </button>
+            </div>
+          </div>
+        )}
           <div className="flex items-center gap-2">
             {activeSymbols.length > 0 && (
               <div className="flex items-center gap-2 bg-[#25252D] px-3 py-1.5 rounded-xl border border-amber-500/40 shadow-inner">
@@ -686,7 +943,13 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
         ) : null}
 
         {/* The Virtual Keybed Layout Container */}
-        <div className="bg-[#111116] p-2.5 rounded-2xl border border-white/10 shadow-inner flex flex-col gap-1.5 overflow-x-auto no-scrollbar">
+        <div
+          className="bg-[#111116] p-2.5 rounded-2xl border border-white/10 shadow-inner flex flex-col gap-1.5 overflow-x-auto no-scrollbar transition-all duration-200 origin-top"
+          style={{
+            transform: `scale(${kbdScale})`,
+            transformOrigin: 'top center'
+          }}
+        >
           {/* Row 0: Fn row */}
           <div className="flex gap-1.5 w-full">{row0.map(renderKey)}</div>
           {/* Row 1: Number row */}
